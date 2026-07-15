@@ -11,6 +11,7 @@ import io
 import os
 import re
 import sys
+import threading
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -33,17 +34,29 @@ ALLOWED_CONTENT_TYPES = {
     'application/octet-stream',
 }
 
+_load_error: Optional[str] = None
+
+
+def _load_models() -> None:
+    global _load_error
+    try:
+        init_service(version='1.3', upscale=2)
+        _load_error = None
+    except Exception as exc:  # noqa: BLE001 — surface in /health
+        _load_error = str(exc)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Same defaults as: python inference_gfpgan.py -i ... -o results -v 1.3 -s 2
-    init_service(version='1.3', upscale=2)
+    # Load weights in background so /health responds immediately (Compose-friendly).
+    thread = threading.Thread(target=_load_models, name='gfpgan-init', daemon=True)
+    thread.start()
     yield
 
 
 app = FastAPI(
-    title='GFPGAN API',
-    description='Upload an image to restore/enhance faces with GFPGAN v1.3 (upscale x2).',
+    title='Photo Repair API',
+    description='Upload an image to restore/enhance faces (GFPGAN v1.3, upscale x2).',
     version='1.0.0',
     lifespan=lifespan,
 )
@@ -67,7 +80,7 @@ def _safe_basename(filename: Optional[str]) -> str:
 @app.get('/')
 def root():
     return {
-        'message': 'GFPGAN FastAPI backend',
+        'message': 'Photo Repair API',
         'docs': '/docs',
         'endpoints': {
             'health': 'GET /health',
@@ -78,7 +91,18 @@ def root():
 
 @app.get('/health')
 def health():
-    service = get_service()
+    if _load_error:
+        return {
+            'status': 'error',
+            'detail': _load_error,
+        }
+    try:
+        service = get_service()
+    except RuntimeError:
+        return {
+            'status': 'starting',
+            'detail': 'Loading models…',
+        }
     return {
         'status': 'ok',
         'version': service.version,
@@ -98,15 +122,10 @@ def restore(
         None,
         ge=0.0,
         le=1.0,
-        description='GFPGAN blending weight (default 0.5)',
+        description='Blending weight (default 0.5)',
     ),
 ):
-    """Accept an image upload, run GFPGAN inference, and return the restored image.
-
-    Equivalent to::
-
-        python inference_gfpgan.py -i <upload> -o results -v 1.3 -s 2
-    """
+    """Accept an image upload, run face restoration, and return the restored image."""
     if file.content_type and file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code=400,
@@ -119,6 +138,13 @@ def restore(
 
     try:
         service = get_service()
+    except RuntimeError:
+        raise HTTPException(
+            status_code=503,
+            detail='Models are still loading. Try again in a moment.',
+        ) from None
+
+    try:
         restored_bytes, media_type = service.enhance_image(
             image_bytes,
             only_center_face=only_center_face,

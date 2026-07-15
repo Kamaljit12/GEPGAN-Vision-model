@@ -1,0 +1,15 @@
+# Runtime deps for Photo Repair API (Docker). Omits tb-nightly / GUI OpenCV.
+# torch / torchvision are installed separately (CUDA wheels in Dockerfile).
+# numpy must stay <2 for PyTorch 2.2.x (_ARRAY_API / "Numpy is not available")
+numpy==1.26.4
+basicsr>=1.4.2
+facexlib>=0.2.5
+realesrgan>=0.3.0
+lmdb
+opencv-python-headless
+pyyaml
+scipy
+tqdm
+yapf
+filterpy
+numba
