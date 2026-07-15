@@ -329,8 +329,8 @@ app.innerHTML = `
               <figure class="panel">
                 <figcaption>Restored</figcaption>
                 <div class="panel-frame" id="restored-frame">
-                  <img id="side-restored" alt="Restored image" />
-                  <div class="panel-loader" id="panel-loader">
+                  <img id="side-restored" alt="" />
+                  <div class="panel-loader" id="panel-loader" aria-live="polite">
                     <span class="spinner" aria-hidden="true"></span>
                     <span>Restoring…</span>
                   </div>
@@ -445,6 +445,8 @@ function clearImageSrcs() {
   imgs.sliderRestored.removeAttribute('src')
   imgs.sideOriginal.removeAttribute('src')
   imgs.sideRestored.removeAttribute('src')
+  imgs.sideRestored.alt = ''
+  imgs.sliderRestored.alt = ''
 }
 
 function openPicker() {
@@ -560,7 +562,9 @@ async function handleFile(file: File) {
     if (requestId !== restoreRequestId) return
     restoredUrl = URL.createObjectURL(blob)
     imgs.sliderRestored.src = restoredUrl
+    imgs.sliderRestored.alt = 'Restored'
     imgs.sideRestored.src = restoredUrl
+    imgs.sideRestored.alt = 'Restored image'
     downloadBtn.href = restoredUrl
     downloadBtn.download = `${stemName(file.name)}_restored.png`
     setDownloadEnabled(true)

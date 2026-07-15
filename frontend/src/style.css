@@ -1039,6 +1039,7 @@ html[data-theme='dark'] .health[data-state='down'] {
   border-radius: 16px;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+  min-width: 0;
 }
 
 .panel figcaption {
@@ -1055,6 +1056,7 @@ html[data-theme='dark'] .health[data-state='down'] {
   position: relative;
   aspect-ratio: 1;
   background: #0f172a;
+  overflow: hidden;
 }
 
 .panel-frame img {
@@ -1064,21 +1066,38 @@ html[data-theme='dark'] .health[data-state='down'] {
   object-fit: contain;
 }
 
+/* Hide empty images — prevents broken-icon + alt text on mobile */
+.panel-frame img:not([src]),
+.panel-frame img[src=''],
+.slider-stage img:not([src]),
+.slider-stage img[src=''],
+.panel-frame.is-loading > img {
+  display: none;
+}
+
 .panel-loader {
   position: absolute;
   inset: 0;
+  z-index: 2;
   display: none;
-  place-items: center;
-  gap: 0.65rem;
   flex-direction: column;
-  background: rgba(15, 23, 42, 0.55);
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  text-align: center;
+  background: #0f172a;
   color: #fff;
   font-weight: 700;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
 }
 
 .panel-frame.is-loading .panel-loader {
   display: flex;
+}
+
+.panel-loader .spinner {
+  flex-shrink: 0;
 }
 
 .spinner {
@@ -1262,6 +1281,11 @@ html[data-theme='dark'] .health[data-state='down'] {
     grid-template-columns: 1fr;
   }
 
+  .panel-frame {
+    aspect-ratio: 4 / 3;
+    min-height: 220px;
+  }
+
   .slider-stage {
     aspect-ratio: 1;
     max-height: none;
@@ -1269,9 +1293,30 @@ html[data-theme='dark'] .health[data-state='down'] {
 }
 
 @media (max-width: 560px) {
+  .container {
+    width: min(var(--max), calc(100% - 1.25rem));
+  }
+
+  .site-header-inner {
+    min-height: 56px;
+  }
+
+  .logo-text {
+    font-size: 1rem;
+  }
+
+  .health {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.78rem;
+  }
+
   .feature-strip,
   .stats-card {
     grid-template-columns: 1fr;
+  }
+
+  .stat {
+    padding: 1.15rem 1rem;
   }
 
   .stat:nth-child(odd) {
@@ -1292,19 +1337,56 @@ html[data-theme='dark'] .health[data-state='down'] {
     justify-self: stretch;
   }
 
+  .section-workspace {
+    padding-top: 1.25rem;
+    padding-bottom: 2rem;
+  }
+
   .workspace-bar {
+    flex-direction: column;
     align-items: stretch;
+    gap: 0.85rem;
+  }
+
+  .file-name {
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+    font-size: 0.98rem;
   }
 
   .toolbar {
     width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
   }
 
   .seg {
-    flex: 1;
+    grid-column: 1 / -1;
+    display: flex;
+    width: 100%;
   }
 
   .seg-btn {
     flex: 1;
+  }
+
+  .toolbar .btn {
+    width: 100%;
+  }
+
+  .side-view.is-active {
+    gap: 0.85rem;
+  }
+
+  .panel-frame {
+    aspect-ratio: 1;
+    min-height: 200px;
+  }
+
+  .panel-loader {
+    font-size: 0.9rem;
+    gap: 0.85rem;
   }
 }
